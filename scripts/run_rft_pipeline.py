@@ -32,7 +32,7 @@ def run_rollout_with_server(task_name: str, rollout_output_dir: str, num_instanc
     try:
         # 2. 옴니깁슨 롤아웃 실행 (켜져있는 서버로 데이터 전송)
         subprocess.run([
-            "python", "OmniGibson/omnigibson/learning/eval_custom.py",
+            "python", "scripts/eval_custom.py",
             "policy=websocket",
             "save_rollout=true",
             "perturb_pose=true",
