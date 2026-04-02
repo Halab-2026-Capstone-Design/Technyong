@@ -51,62 +51,62 @@ class PiBehaviorConfig(_model.BaseModelConfig):
     action_dim: int = 32
     action_horizon: int = 30
     max_token_len: int = 200  # Only used for compatibility, not for actual tokenization
-    
+
     # Number of tasks in the behavior dataset
     num_tasks: int = 50
     # Task embedding dimension - will match the paligemma width
     task_embedding_dim: int = None  # type: ignore
     # Maximum number of subtask states across all tasks
     max_num_subtask_states: int = MAX_NUM_STAGES
-    
+
     # Path to task data JSON file for initialization
     task_data_path: str = "b1k/BEHAVIOR-1K/docs/challenge/task_data.json"
-    
+
     # Whether to use correlated noise matching action covariance structure
     # Requires correlation matrix in norm_stats (computed by compute_norm_stats.py)
     use_correlated_noise: bool = True
-    
+
     # Shrinkage parameter for correlation regularization
     # Applied as: S_regularized = beta * S + (1-beta) * I
     # beta=1.0 means full correlation (no shrinkage)
     # beta=0.7 means 70% correlation + 30% independence (recommended for robustness)
     # beta=0.0 means independence (no correlation)
     correlation_beta: float = 0.5
-    
+
     # FAST auxiliary training configuration
     use_fast_auxiliary: bool = False  # Enable FAST during training
     fast_loss_weight: float = 0.1  # Weight for FAST loss (vs flow loss)
-    
+
     # Action dimensions to encode with FAST (default: 0:6, 7:23 = 22 dims)
     # Format: "0:6,7:23" or list of tuples [(0, 6), (7, 23)]
     fast_encoded_dims: str | list[tuple[int, int]] = "0:6,7:23"
-    
+
     # FAST tokenizer vocab size
     fast_vocab_size: int = 1024
-    
+
     # Max FAST tokens to predict (truncate if exceeded)
     max_fast_tokens: int = 32
-    
+
     # FAST tokenizer path (set during initialization, relative to assets_dir/asset_id)
     fast_tokenizer_path: str | None = None
-    
+
     # KV cache transformation for cross-layer attention between VLM and action expert
     # Allows each action expert layer to attend to a learned combination of all VLM layers
     use_kv_transform: bool = True
-    
+
     # Knowledge insulation: stop action expert gradients from flowing to VLM backbone
     # VLM trains on FAST tokens only, action expert on flow matching with frozen VLM features
     # Implements approach from https://www.physicalintelligence.company/research/knowledge_insulation
     use_knowledge_insulation: bool = True
-    
+
     # Subtask/stage prediction auxiliary loss weight (relative to action loss)
     # Higher values emphasize stage prediction accuracy at the expense of action quality
     subtask_loss_weight: float = 0.1
-    
+
     # Time threshold for inpainting during inference
     # Stop enforcing inpainting constraint when t < threshold (let model be free in final steps)
     time_threshold_inpaint: float = 0.3
-    
+
     # Vision backbone finetuning control
     freeze_vision_backbone: bool = True
 
@@ -114,7 +114,7 @@ class PiBehaviorConfig(_model.BaseModelConfig):
         if self.task_embedding_dim is None:
             paligemma_config = _gemma.get_config(self.paligemma_variant)
             object.__setattr__(self, "task_embedding_dim", paligemma_config.width)
-    
+
     def get_fast_dim_ranges(self) -> list[tuple[int, int]]:
         """Parse fast_encoded_dims into list of ranges."""
         if isinstance(self.fast_encoded_dims, str):
@@ -124,7 +124,7 @@ class PiBehaviorConfig(_model.BaseModelConfig):
                 ranges.append((start, end))
             return ranges
         return self.fast_encoded_dims
-    
+
     def get_total_fast_dims(self) -> int:
         """Get total number of dimensions encoded by FAST."""
         return sum(end - start for start, end in self.get_fast_dim_ranges())
@@ -147,26 +147,41 @@ class PiBehaviorConfig(_model.BaseModelConfig):
 
         with at.disable_typechecking():
             obs_kwargs = {
+
+#                모델 input spec에서 RGB 3카메라를 받는 부분
+#                "images": {
+#                    "base_0_rgb": image_spec,
+#                    "left_wrist_0_rgb": image_spec,
+#                    "right_wrist_0_rgb": image_spec,
+#                },
+#                "image_masks": {
+#                    "base_0_rgb": image_mask_spec,
+#                    "left_wrist_0_rgb": image_mask_spec,
+#                    "right_wrist_0_rgb": image_mask_spec,
+#                },
+
+                #수정 (3.29)
                 "images": {
-                    "base_0_rgb": image_spec,
-                    "left_wrist_0_rgb": image_spec,
-                    "right_wrist_0_rgb": image_spec,
-                },
+                     "base_0_semantic_rgb": image_spec,
+                     "left_wrist_0_semantic_rgb": image_spec,
+                     "right_wrist_0_semantic_rgb": image_spec,
+                     },
                 "image_masks": {
-                    "base_0_rgb": image_mask_spec,
-                    "left_wrist_0_rgb": image_mask_spec,
-                    "right_wrist_0_rgb": image_mask_spec,
-                },
+                    "base_0_semantic_rgb": image_mask_spec,
+                    "left_wrist_0_semantic_rgb": image_mask_spec,
+                    "right_wrist_0_semantic_rgb": image_mask_spec,
+                    },
+
                 "state": jax.ShapeDtypeStruct([batch_size, self.action_dim], jnp.float32),
                 "tokenized_prompt": jax.ShapeDtypeStruct([batch_size, 2], jnp.int32),
                 "tokenized_prompt_mask": jax.ShapeDtypeStruct([batch_size, 2], bool),
             }
-            
+
             if self.use_fast_auxiliary:
                 obs_kwargs["fast_tokens"] = jax.ShapeDtypeStruct([batch_size, self.max_fast_tokens], jnp.int32)
                 obs_kwargs["fast_token_mask"] = jax.ShapeDtypeStruct([batch_size, self.max_fast_tokens], bool)
-            
+
             observation_spec = Observation(**obs_kwargs)
-        
+
         action_spec = jax.ShapeDtypeStruct([batch_size, self.action_horizon, self.action_dim], jnp.float32)
         return observation_spec, action_spec
