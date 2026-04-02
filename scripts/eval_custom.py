@@ -27,7 +27,7 @@ from omegaconf import DictConfig
 from omegaconf import OmegaConf
 import omnigibson as og
 from omnigibson.envs.env_wrapper import EnvironmentWrapper
-from omnigibson.learning.pose_perturbator import PosePerturbator
+from b1k.shared.pose_perturbator import PosePerturbator
 from omnigibson.learning.utils.config_utils import register_omegaconf_resolvers
 from omnigibson.learning.utils.eval_utils import HEAD_RESOLUTION
 from omnigibson.learning.utils.eval_utils import PROPRIOCEPTION_INDICES
