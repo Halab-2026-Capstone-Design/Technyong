@@ -1,3 +1,4 @@
+
 import dataclasses
 import enum
 import logging
@@ -53,7 +54,7 @@ class Args:
 
     # If provided, will be used in case the "prompt" key is not present in the data, or if the model doesn't have a default prompt.
     default_prompt: str | None = None
-    
+
     # For PI_BEHAVIOR models: task ID (0-49) instead of text prompt
     task_id: int | None = None
 
@@ -69,7 +70,7 @@ class Args:
 
     # Specifies how to load the policy. If not provided, the default policy for the environment will be used.
     policy: Checkpoint | Default = dataclasses.field(default_factory=Default)
-    
+
     # B1K Wrapper execution parameters
     actions_to_execute: int = 26
     actions_to_keep: int = 4
@@ -79,17 +80,20 @@ class Args:
     time_threshold_inpaint: float = 0.3
     num_steps: int = 20
     apply_eval_tricks: bool = True  # Enable correction rules and gripper variation checks
-    
+
     # Multi-checkpoint support for PI_BEHAVIOR models (optional)
     task_checkpoint_mapping: str | None = None  # Path to task-checkpoint mapping JSON file
 
+    # [Retry 설정 추가]
+    recovery_steps: int = 10     # 실패 시 10스텝(약 0.5초) 동안 후진
+    grasp_threshold: float = 0.01 # 그리퍼 폭 0.01 미만이면 실패로 간주
 
 def create_policy(args: Args) -> _policy.Policy:
     """Create a policy from the given arguments."""
     sample_kwargs = {"num_steps": args.num_steps}
     return _policy_config.create_trained_policy(
-        _config.get_config(args.policy.config), 
-        args.policy.dir, 
+        _config.get_config(args.policy.config),
+        args.policy.dir,
         default_prompt=args.default_prompt,
         sample_kwargs=sample_kwargs
     )
@@ -98,7 +102,7 @@ def create_policy(args: Args) -> _policy.Policy:
 def main(args: Args) -> None:
     # B1K only supports PI_BEHAVIOR models (task embeddings, no text prompts)
     config = _config.get_config(args.policy.config)
-    
+
     # PI_BEHAVIOR model setup
     if args.task_id is not None:
         logging.info(f"Using PI_BEHAVIOR model with task_id: {args.task_id}")
@@ -106,7 +110,7 @@ def main(args: Args) -> None:
     else:
         logging.info(f"Using PI_BEHAVIOR model - task_id will be extracted from observations")
         task_id = None
-    
+
     # Placeholder prompt for PI_BEHAVIOR (not actually used by model)
     prompt = "PI_BEHAVIOR model (task-conditioned)"
     logging.info(f"Using prompt: {prompt}")
@@ -119,9 +123,9 @@ def main(args: Args) -> None:
     checkpoint_switcher = None
     if args.task_checkpoint_mapping:
         logging.info(f"Multi-checkpoint mode enabled: {args.task_checkpoint_mapping}")
-        
+
         sample_kwargs = {"num_steps": args.num_steps}
-        
+
         try:
             checkpoint_switcher = CheckpointSwitcher(
                 config_path=args.task_checkpoint_mapping,
@@ -147,12 +151,15 @@ def main(args: Args) -> None:
         history_len=args.history_len,
         votes_to_promote=args.votes_to_promote,
         time_threshold_inpaint=args.time_threshold_inpaint,
-        num_steps=args.num_steps,
-        apply_eval_tricks=args.apply_eval_tricks,
+        num_steps=1, #리트라이는 빠른 판단이 생명이라 1로 고정
+        apply_eval_tricks=False, #1등팀의 느린 트릭을 끄기
+        # [우리의 리트라이 설정 주입]
+        recovery_steps=args.recovery_steps,
+        grasp_threshold=args.grasp_threshold
     )
-    
+
     logging.info(f"Wrapper config: execute={wrapper_config.actions_to_execute}, keep={wrapper_config.actions_to_keep}, steps={wrapper_config.execute_in_n_steps}, num_steps={wrapper_config.num_steps}")
-    
+
     if wrapper_config.apply_eval_tricks:
         logging.info("Eval tricks ENABLED - correction rules and gripper variation checks active")
     else:
@@ -160,13 +167,13 @@ def main(args: Args) -> None:
 
     # Create B1K wrapper with PI_BEHAVIOR-specific features
     policy = B1KPolicyWrapper(
-        policy, 
+        policy,
         text_prompt=prompt,  # Not used by PI_BEHAVIOR, kept for compatibility
         task_id=task_id,
         config=wrapper_config,
         checkpoint_switcher=checkpoint_switcher
     )
-    
+
     if checkpoint_switcher:
         logging.info("Multi-checkpoint mode: checkpoints will switch based on task_id from observations")
     else:
