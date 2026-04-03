@@ -57,7 +57,7 @@ def filter_success_episodes(rollout_output_dir: str, success_list_path: str, tas
     success_count, total_count = 0, 0
     
     # 이번 라운드 데이터로 초기화
-    open(success_list_path, "w").close()
+    #open(success_list_path, "w").close()
 
     for run_dir in sorted(rollout_path.iterdir()):
         if not run_dir.is_dir(): continue
