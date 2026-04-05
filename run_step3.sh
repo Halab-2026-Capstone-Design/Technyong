@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==========================================
-# [그룹 1: 정리 및 수거 (가장 쉬운 우선 학습 10개)]
+# [그룹 1: 정리 정돈 및 물건 배치]
 # ==========================================
 GROUP_1=(
     "picking_up_trash"             # 쓰레기 줍기
@@ -80,35 +80,33 @@ GROUP_5=(
     "setting_up_a_tent"            # 텐트 설치하기
 )
 
-ALL_GROUPS=(GROUP_1 GROUP_2 GROUP_3 GROUP_4 GROUP_5)
+# 모든 그룹을 하나의 배열로 병합
+ALL_TASKS=("${GROUP_1[@]}" "${GROUP_2[@]}" "${GROUP_3[@]}" "${GROUP_4[@]}" "${GROUP_5[@]}")
 
-echo "🚀 [Step 3] BEHAVIOR-1K 50개 태스크 병렬 롤아웃을 가동합니다!"
+echo "🚀 [Step 3] 50개 태스크 본격 학습을 시작합니다! (2개씩 병렬 실행)"
 
-for GROUP_NAME in "${ALL_GROUPS[@]}"; do
-    echo "========================================="
-    echo "📂 [$GROUP_NAME] 학습 시작..."
-    echo "========================================="
+# 배열의 인덱스를 이용해 반복문 실행
+for i in "${!ALL_TASKS[@]}"; do
+    TASK="${ALL_TASKS[$i]}"
     
-    # 해당 그룹의 10개 태스크 리스트 가져오기
-    eval "CURRENT_GROUP=(\"\${${GROUP_NAME}[@]}\")"
-
-    for TASK in "${CURRENT_GROUP[@]}"; do
-        echo "▶️ [진행 중] $TASK"
+    echo "▶️ 실행 시작: $TASK"
+    
+    # 백그라운드(&)로 실행하며, 태스크별로 로그 파일 분리
+    python scripts/run_rft_pipeline.py \
+        --task_name $TASK \
+        --sft_checkpoint outputs/checkpoints/best_base_model \
+        --rft_rounds 3 \
+        --rollout_instances 10 > "log_${TASK}.txt" 2>&1 &
         
-        # [주의] 이 부분은 50개 연속 학습이므로 rft_rounds나 rollout_instances를
-        # 창용님의 서버 상황에 맞춰 조절하시면 됩니다.
-        python scripts/run_rft_pipeline.py \
-            --task_name $TASK \
-            --sft_checkpoint outputs/checkpoints/best_base_model \
-            --rft_rounds 3 \
-            --rollout_instances 20
-            
-        echo "✅ [$TASK] 완료! VRAM 초기화를 위해 5초 대기합니다."
-        sleep 5 
-    done
-    
-    echo "🎉 [$GROUP_NAME] 완료! 다음 10개 그룹으로 넘어갑니다."
-    sleep 10
+    # 2개가 실행될 때마다 대기 (짝수 번째 인덱스 도달 시)
+    if (((i + 1) % 2 == 0)); then
+        echo "⏳ 2개 태스크가 모두 끝날 때까지 대기합니다..."
+        wait
+        echo "✅ 1개 그룹(2개 태스크) 완료! 메모리 정리 후 다음 그룹으로 넘어갑니다."
+        sleep 5
+    fi
 done
 
-echo "🏆 50개 태스크 전체 파이프라인 무인 구동 완벽 종료!"
+# 혹시 남아있을 수 있는 백그라운드 작업을 위해 마지막으로 한 번 더 대기
+wait
+echo "🎉 50개 태스크 RFT 최종 학습이 모두 완료되었습니다! (로그 파일을 확인하세요)"
