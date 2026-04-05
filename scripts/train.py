@@ -110,7 +110,7 @@ def run_rft_train(rft_round: int, sft_checkpoint: str) -> str:
     exp_name = f"rft_round_{rft_round}"
 
     # config.py의 PLACEHOLDER를 실제 체크포인트 경로로 교체
-    _patch_checkpoint_in_config(sft_checkpoint)
+    #_patch_checkpoint_in_config(sft_checkpoint)
 
     subprocess.run([
         "uv", "run", "scripts/train.py",
