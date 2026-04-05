@@ -25,7 +25,7 @@ for TASK in "${TASKS[@]}"; do
     python scripts/run_rft_pipeline.py \
         --task_name $TASK \
         --sft_checkpoint outputs/checkpoints/best_base_model \
-        --rft_rounds 3 \
+        --rft_rounds 1 \
         --rollout_instances 10
         
     echo "✅ [$TASK] 학습 완료! 메모리를 정리합니다."
