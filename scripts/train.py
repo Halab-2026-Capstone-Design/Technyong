@@ -114,8 +114,9 @@ def run_rft_train(rft_round: int, sft_checkpoint: str) -> str:
 
     subprocess.run([
         "uv", "run", "scripts/train.py",
-        "pi_behavior_b1k_fast_rft",        # RFT 전용 config 사용
+        "pi_behavior_b1k_fast_rft",
         f"--exp_name={exp_name}",
+        f"--sft_checkpoint={sft_checkpoint}",  
         "--overwrite",
     ], check=True)
 
