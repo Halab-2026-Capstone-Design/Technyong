@@ -165,13 +165,57 @@ def main():
     args = parser.parse_args()
 
     # 태스크별 에피소드 ID 오프셋 (2등팀 방식, 필요하면 추가)
-    task_map = {
-        "turning_on_radio":   1000,
-        "picking_up_trash":   2000,
-        "sorting_vegetables": 3000,
-        # 나머지 태스크 필요하면 추가
-    }
-
+   task_map = {"picking_up_trash" : 1000,          # 쓰레기 줍기
+            "collecting_aluminum_cans" : 2000,  # 알루미늄 캔 수거하기
+            "storing_groceries" : 3000,            # 식료품 보관하기
+            "cleaning_shoes" : 4000,               # 신발 닦기
+            "putting_away_toys" : 5000,       # 장난감 정리하기
+            "throwing_away_leftovers" : 6000,    # 남은 음식 버리기
+            "organizing_cleaning_supplies" : 7000, # 청소 용품 정리하기
+            "setting_the_table" : 8000,           # 식탁 차리기
+            "packing_a_box" : 9000,            # 상자 포장하기
+            "washing_dishes" : 10000,                  # 설거지하기
+            "wiping_the_table" : 11000,                # 식탁 닦기
+            "vacuuming_the_floor" : 12000,             # 진공청소기 돌리기
+            "sweeping_the_floor" : 13000,              # 바닥 쓸기
+            "mopping_the_floor" : 14000,               # 바닥 걸레질하기
+            "dusting_shelves" : 15000,                 # 선반 먼지 털기
+            "cleaning_windows" : 16000,                # 창문 닦기
+            "making_the_bed" : 17000,                  # 침대 정리하기
+            "watering_plants" : 18000,                 # 화분에 물 주기
+            "setting_up_a_tent" : 19000,               # 텐트 설치하기
+            "taking_out_the_trash" : 20000,            # 쓰레기 내다 버리기
+            "sorting_mail" : 21000,                    # 우편물 분류하기 
+            "turning_on_radio" : 22000,                # 라디오 켜기
+            "opening_the_fridge" : 23000,              # 냉장고 열기 (정리)
+            "washing_clothes" : 24000,                 # 세탁기 돌리기
+            "drying_clothes" : 25000,                  # 건조기 돌리기
+            "folding_laundry" : 26000,                 # 빨래 개기
+            "ironing_clothes" : 27000,                # 옷 다림질하기
+            "organizing_a_closet" : 28000,             # 옷장 정리하기
+            "packing_a_suitcase" : 29000,              # 여행 가방 싸기
+            "unpacking_a_suitcase" : 30000,            # 여행 가방 풀기
+            "arranging_books" : 31000,                 # 책장에 책 꽂기
+            "cleaning_the_bathroom" :329000,           # 화장실 청소하기
+            "cleaning_the_kitchen" : 33000,            # 주방 청소하기
+            "cleaning_the_microwave" : 34000,          # 전자레인지 청소하기
+            "cleaning_the_oven" : 35000,               # 오븐 청소하기
+            "loading_the_dishwasher" : 36000,          # 식기세척기에 그릇 넣기
+            "unloading_the_dishwasher" : 37000,        # 식기세척기에서 그릇 빼기
+            "stocking_the_pantry" : 38000,             # 식료품 창고 채우기
+            "boiling_water" : 39000,                   # 물 끓이기
+            "preparing_a_salad" : 40000,               # 샐러드 준비하기
+            "making_a_sandwich" : 41000,               # 샌드위치 만들기
+            "chopping_an_onion" : 42000,               # 양파 썰기
+            "setting_up_a_coffee_station" : 43000,     # 커피 스테이션 세팅하기
+            "feeding_a_pet" : 44000,                   # 반려동물 먹이 주기
+            "cleaning_a_litter_box" : 45000,           # 배변 훈련함(고양이 화장실) 치우기
+            "replacing_a_light_bulb" : 46000,          # 전구 교체하기
+            "assembling_furniture" : 47000,            # 가구 조립하기
+            "mowing_the_lawn" : 48000,                 # 잔디 깎기
+            "washing_a_car" : 49000,                   # 세차하기
+            "cleaning_a_bicycle" : 50000,              # 자전거 닦기
+               }
     current_checkpoint = args.sft_checkpoint
     logger.info(f"RFT 시작 | task={args.task_name} | rounds={args.rft_rounds} | SFT={current_checkpoint}")
 
