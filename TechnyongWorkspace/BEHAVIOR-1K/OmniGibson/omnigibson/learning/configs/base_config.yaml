@@ -1,0 +1,24 @@
+defaults:
+  - _self_  # all below configs will override this conf.yaml
+  - robot: r1pro
+  - task: behavior
+  - policy: ???
+
+env_wrapper: 
+  _target_: omnigibson.learning.wrappers.RGBLowResWrapper
+policy_name: ???  # filled by policy
+headless: true  # whether to run in headless mode (no GUI)
+eval_on_train_instances: false  # whether to eval on training instances
+write_video: True
+eval_instance_ids: null  # specific list of instance ids to eval on, if null test on all instances
+partial_scene_load: false  # whether to only load task-relevant rooms for a specific task
+max_steps: null  # max steps per rollout episode, setting to null will use the default value (2 x average human demo completion steps)
+log_path: ???
+test_hidden: false  # [Internal use only] whether to eval on hidden test instances
+
+# 1등 팀이 누락했던 커스텀 평가 옵션들 정식 등록(수정 2026-04-13)
+save_rollout: false
+perturb_pose: false
+use_parallel_evaluator: false
+parallel_evaluator_start_idx: 0
+parallel_evaluator_end_idx: 1
